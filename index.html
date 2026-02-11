@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SiPintar Pro V2</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8faff; -webkit-tap-highlight-color: transparent; }
+        .bg-main { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); }
+        .btn-active { transform: scale(0.95); opacity: 0.8; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body class="pb-24">
+    <div id="app">
+        <div class="bg-main p-8 pb-16 rounded-b-[40px] text-white shadow-2xl shadow-indigo-200">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight">SiPintar <span class="text-indigo-200">V2</span></h1>
+                    <p class="text-xs opacity-80 font-semibold uppercase tracking-widest">School Management</p>
+                </div>
+                <div class="bg-white/20 p-2 rounded-2xl backdrop-blur-md">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2940/2940651.png" class="w-10 h-10">
+                </div>
+            </div>
+        </div>
+
+        <div class="px-6 -mt-10 grid grid-cols-2 gap-4">
+            <button @click="view = 'spp'" :class="['p-6 rounded-[30px] shadow-xl transition-all', view === 'spp' ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-900']">
+                <p class="text-[10px] font-black uppercase opacity-60 mb-1">Bayar</p>
+                <h3 class="font-bold text-lg">SPP</h3>
+            </button>
+            <button @click="view = 'tabungan'" :class="['p-6 rounded-[30px] shadow-xl transition-all', view === 'tabungan' ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-900']">
+                <p class="text-[10px] font-black uppercase opacity-60 mb-1">Kelola</p>
+                <h3 class="font-bold text-lg">Tabungan</h3>
+            </button>
+        </div>
+
+        <div v-if="view === 'spp' || view === 'tabungan'" class="px-6 mt-8">
+            <div class="glass-card p-6 rounded-[35px] shadow-lg">
+                <h2 class="font-extrabold text-indigo-900 mb-6 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-indigo-600 rounded-full"></span>
+                    Input {{ view === 'spp' ? 'SPP' : 'Tabungan' }}
+                </h2>
+                <div class="space-y-4">
+                    <input v-model="form.name" type="text" placeholder="Nama Siswa" class="w-full p-4 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-semibold outline-none">
+                    
+                    <input v-model.number="form.amount" type="number" placeholder="Nominal Rp" class="w-full p-4 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-black outline-none">
+                    
+                    <div v-if="view === 'spp'">
+                        <select v-model="form.desc" class="w-full p-4 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 text-sm font-semibold outline-none">
+                            <option v-for="m in months" :value="m">{{ m }}</option>
+                        </select>
+                    </div>
+
+                    <div v-if="view === 'tabungan'" class="flex gap-2">
+                        <button @click="form.type = 'SETOR'" :class="['flex-1 p-3 rounded-xl font-bold text-xs', form.type === 'SETOR' ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400']">SETOR</button>
+                        <button @click="form.type = 'TARIK'" :class="['flex-1 p-3 rounded-xl font-bold text-xs', form.type === 'TARIK' ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-400']">TARIK</button>
+                    </div>
+
+                    <button @click="save" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-black text-sm shadow-lg shadow-indigo-100 active:scale-95 transition-all mt-4">SIMPAN TRANSAKSI</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="view === 'laporan'" class="px-6 mt-8 pb-10">
+            <h2 class="font-extrabold text-indigo-900 mb-4 px-2">Riwayat Terakhir</h2>
+            <div class="space-y-4">
+                <div v-for="log in logs" :key="log.id" class="glass-card p-5 rounded-[30px] flex justify-between items-center shadow-sm">
+                    <div class="min-w-0">
+                        <p class="text-[9px] font-black text-indigo-500 uppercase tracking-tighter">{{ log.category }} • {{ log.date }}</p>
+                        <h4 class="font-bold text-slate-800 truncate">{{ log.name }}</h4>
+                        <p class="text-xs font-semibold text-slate-400">{{ log.desc }}</p>
+                    </div>
+                    <div class="text-right flex flex-col items-end gap-2">
+                        <p :class="['font-black text-sm', log.type === 'SETOR' ? 'text-green-600' : 'text-red-600']">
+                            {{ log.type === 'SETOR' ? '+' : '-' }}Rp{{ formatPrice(log.amount) }}
+                        </p>
+                        <button @click="shareWA(log)" class="bg-indigo-50 text-indigo-600 p-2 rounded-xl text-[10px] font-bold">STRUK WA</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="fixed bottom-6 left-6 right-6 h-20 glass-card rounded-[35px] shadow-2xl flex items-center justify-around px-4 border border-white/50 z-50">
+            <button @click="view = 'home'" :class="['flex flex-col items-center gap-1 transition-all', view === 'home' ? 'text-indigo-600' : 'text-slate-300']">
+                <span class="text-xl">🏠</span>
+                <span class="text-[9px] font-black uppercase">Home</span>
+            </button>
+            <button @click="view = 'laporan'" :class="['flex flex-col items-center gap-1 transition-all', view === 'laporan' ? 'text-indigo-600' : 'text-slate-300']">
+                <span class="text-xl">📊</span>
+                <span class="text-[9px] font-black uppercase">Laporan</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+        createApp({
+            data() {
+                return {
+                    view: 'home',
+                    logs: JSON.parse(localStorage.getItem('sipintar_v2_db')) || [],
+                    months: ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'],
+                    form: { name: '', amount: null, desc: 'Januari', type: 'SETOR' }
+                }
+            },
+            methods: {
+                save() {
+                    if (!this.form.name || !this.form.amount) return alert('Lengkapi data!');
+                    const cat = this.view === 'spp' ? 'SPP' : 'Tabungan';
+                    const data = {
+                        id: Date.now(),
+                        name: this.form.name,
+                        category: cat,
+                        amount: this.form.amount,
+                        desc: cat === 'SPP' ? 'Bulan ' + this.form.desc : 'Tabungan (' + this.form.type + ')',
+                        type: this.form.type,
+                        date: new Date().toLocaleDateString('id-ID'),
+                        time: new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})
+                    };
+                    this.logs.unshift(data);
+                    localStorage.setItem('sipintar_v2_db', JSON.stringify(this.logs));
+                    this.view = 'laporan';
+                    this.form = { name: '', amount: null, desc: 'Januari', type: 'SETOR' };
+                },
+                formatPrice(v) { return v.toLocaleString('id-ID') },
+                shareWA(log) {
+                    const text = `*STRUK DIGITAL SI-PINTAR*%0A---------------------------%0A*Nama:* ${log.name}%0A*Kategori:* ${log.category}%0A*Nominal:* Rp${this.formatPrice(log.amount)}%0A*Status:* BERHASIL%0A---------------------------%0A_Waktu: ${log.date} ${log.time}_`;
+                    window.open(`https://wa.me/?text=${text}`, '_blank');
+                }
+            },
+            mounted() {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('./sw.js').then(() => console.log('PWA SiPintar Aktif!'));
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
